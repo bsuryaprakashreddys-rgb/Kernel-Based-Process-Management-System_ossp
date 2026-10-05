@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AFPS | Asynchronous File Processing Server</title>
+  
+  <!-- Modern Clean Web Fonts (Google Fonts with proper unescaped URLs & instant system fallback) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --bg-card: #0d121d;
+      --bg-card-hover: #121826;
+      --bg-elevated: #151d2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --text: #f1f5f9;
+      --text-muted: #8492a6;
+      --text-subtle: #4b5563;
+
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --blue: #3b82f6;
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(6, 182, 212, 0.08), transparent);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
+    /* Layout */
+    aside {
+      width: 260px;
+      background: rgba(10, 14, 22, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      inset: 0 auto 0 0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 10px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at 30% 30%, #818cf8, #4f46e5 60%, #06b6d4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4), 0 0 16px rgba(6, 182, 212, 0.25);
+      color: white;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    .brand-text h2 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .version-chip {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 4px;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-subtle);
+      padding: 12px 12px 6px;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    nav a svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateX(2px);
+    }
+
+    nav a.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.04));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      box-shadow: inset 3px 0 0 var(--primary);
+      font-weight: 600;
+    }
+
+    nav a.active svg {
+      color: #818cf8;
+    }
+
+    nav a .badge {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    nav a.active .badge {
+      background: rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+    }
+
+    /* Sidebar Footer Status */
+    .server-status-card {
+      margin-top: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--rose);
+      position: relative;
+    }
+
+    .pulse-dot.online {
+      background: var(--emerald);
+      box-shadow: 0 0 12px var(--emerald);
+    }
+
+    .pulse-dot.online::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 1.5px solid var(--emerald);
+      animation: pulse 2s infinite;
+      opacity: 0.7;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .server-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .server-meta span {
+      display: block;
+      color: var(--text-subtle);
+      font-size: 9.5px;
+      text-transform: uppercase;
+      font-family: var(--font-sans);
+      font-weight: 600;
+    }
+
+    /* Main Container */
+    main {
+      margin-left: 260px;
+      flex: 1;
+      padding: 30px 40px 60px;
+      min-width: 0;
+      max-width: 1540px;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      gap: 20px;
+    }
+
+    .title-group h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-group p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--bg-elevated);
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: white;
+      box-shadow: 0 4px 16px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-cyan {
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #67e8f9;
+    }
+    .btn-cyan:hover {
+      background: rgba(6, 182, 212, 0.22);
+      border-color: #06b6d4;
+    }
+
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    .btn-emerald:hover {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: var(--emerald);
+    }
+
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      color: #fda4af;
+    }
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: var(--rose);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 11.5px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: var(--bg-card-hover);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-color, var(--primary)), transparent);
+      opacity: 0.6;
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .stat-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-color, var(--primary));
+    }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: -0.03em;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .stat-unit {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+    }
+
+    .stat-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .sparkline-svg {
+      width: 80px;
+      height: 26px;
+      overflow: visible;
+    }
+
+    /* Cards & Panels */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* Chart Component */
+    .chart-container {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+
+    .chart-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 18px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    /* Progress Breakdown */
+    .progress-bar-group {
+      margin-bottom: 16px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+    }
+
+    thead th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--font-mono);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges & Tags */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-read {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .badge-write {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .badge-done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-processing {
+      background: rgba(6, 182, 212, 0.15);
+      color: #67e8f9;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      animation: pulseGlow 1.5s infinite alternate;
+    }
+
+    .badge-created {
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+
+    @keyframes pulseGlow {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+
+    /* Empty States */
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      stroke: var(--text-subtle);
+    }
+
+    .empty-state h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .empty-state p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Terminal Console */
+    .terminal-container {
+      background: #04060a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      height: 520px;
+      overflow-y: auto;
+      padding: 16px;
+      line-height: 1.8;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .log-line {
+      display: flex;
+      gap: 12px;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .log-time {
+      color: var(--text-subtle);
+      user-select: none;
+      min-width: 68px;
+    }
+
+    .log-tag {
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      height: fit-content;
+    }
+
+    .log-tag-SERVER { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .log-tag-WORKER { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .log-tag-COMPLETION { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .log-tag-CONNECT { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+    .log-tag-QUEUE { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+    .log-msg {
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    /* Form & Input Styling */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .input-field, .select-field, .textarea-field {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-field:focus, .select-field:focus, .textarea-field:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .textarea-field {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 640px;
+      box-shadow: var(--shadow-lg);
+      transform: scale(0.96);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      color: #fff;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-md);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success { border-left: 4px solid var(--emerald); }
+    .toast-error { border-left: 4px solid var(--rose); }
+    .toast-info { border-left: 4px solid var(--cyan); }
+
+    /* Page switching */
+    .page-section { display: none; }
+    .page-section.active { display: block; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      aside { width: 72px; padding: 20px 8px; }
+      .brand-text, .nav-label, nav a span, .server-meta, nav a .badge { display: none; }
+      nav a { justify-content: center; padding: 12px; }
+      main { margin-left: 72px; padding: 20px; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .grid-equal { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside>
+    <div class="brand">
+      <div class="brand-icon" title="Asynchronous File Processing Server">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="7" rx="2" stroke="white" stroke-width="1.8" stroke-opacity="0.85"/>
+          <rect x="3" y="14" width="18" height="7" rx="2" stroke="white" stroke-width="1.8" stroke-opacity="0.85"/>
+          <circle cx="7" cy="6.5" r="1.3" fill="#67e8f9"/>
+          <circle cx="10.5" cy="6.5" r="1.3" fill="#a5b4fc"/>
+          <circle cx="7" cy="17.5" r="1.3" fill="#6ee7b7"/>
+          <circle cx="10.5" cy="17.5" r="1.3" fill="#fcd34d"/>
+          <path d="M14.5 6.5C17 6.5 16 17.5 18.5 17.5" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2>AFPS <span class="version-chip">v2.4</span></h2>
+        <span title="Asynchronous File Processing Server">Async File Server</span>
+      </div>
+    </div>
+
+    <nav id="nav">
+      <div class="nav-label">Core Operations</div>
+      <a href="#dashboard" class="active" data-page="dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#workers" data-page="workers">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Worker Pool</span>
+        <span class="badge" id="nav-workers-badge">0</span>
+      </a>
+      <a href="#queue" data-page="queue">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        <span>Completion Queue</span>
+        <span class="badge" id="nav-queue-badge">0</span>
+      </a>
+
+      <div class="nav-label">File Management</div>
+      <a href="#files" data-page="files">
+        <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        <span>Storage & Files</span>
+        <span class="badge" id="nav-files-badge">0</span>
+      </a>
+      <a href="#client" data-page="client">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        <span>Client Console</span>
+      </a>
+
+      <div class="nav-label">Diagnostics</div>
+      <a href="#logs" data-page="logs">
+        <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        <span>System Logs</span>
+      </a>
+    </nav>
+
+    <!-- Status Card -->
+    <div class="server-status-card">
+      <div class="status-row">
+        <div class="live-indicator">
+          <span class="pulse-dot" id="server-pulse"></span>
+          <span id="server-status-text">CONNECTING...</span>
+        </div>
+        <span class="badge badge-read" id="server-port-pill">PORT 8080</span>
+      </div>
+      <div class="server-meta">
+        <div><span>Bridge</span><b id="bridge-status">Active</b></div>
+        <div><span>Concurrency</span><b>Multi-Process</b></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main>
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="title-group">
+        <h1 id="page-title">Overview</h1>
+        <p id="page-desc">Real-time asynchronous IPC & multi-process file server monitor</p>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-cyan btn-sm" id="btn-stress-test" title="Simulate 10 concurrent requests to test worker pool">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Run Benchmark (10x)
+        </button>
+        <button class="btn btn-sm" id="btn-export-json" title="Download system metrics as JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export Data
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards (Always visible at top of Overview) -->
+    <div class="stats-grid">
+      <!-- Total Requests -->
+      <div class="stat-card" style="--accent-color: #3b82f6;">
+        <div class="stat-header">
+          <span class="stat-title">Total Requests</span>
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+        </div>
+        <div class="stat-value" id="kpi-total">0</div>
+        <div class="stat-footer">
+          <span>Processed by POSIX fork</span>
+          <svg class="sparkline-svg" id="spark-total" viewBox="0 0 80 26"></svg>
+        </div>
+      </div>
+
+      <!-- Completed Requests -->
+      <div class="stat-card" style="--accent-color: #10b981;">
+        <div class="stat-header">
+          <span class="stat-title">Completed Queue</span>
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+        </div>
+        <div class="stat-value" id="kpi-completed">0</div>
+        <div class="stat-footer">
+          <span>Pipe IPC ack rate 100%</span>
+          <svg class="sparkline-svg" id="spark-completed" viewBox="0 0 80 26"></svg>
+        </div>
+      </div>
+
+      <!-- Active Workers -->
+      <div class="stat-card" style="--accent-color: #f59e0b;">
+        <div class="stat-header">
+          <span class="stat-title">Active Workers</span>
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+        </div>
+        <div class="stat-value" id="kpi-active">0</div>
+        <div class="stat-footer">
+          <span id="active-status-desc">Processes in I/O queue</span>
+          <span class="badge badge-processing" id="active-tag">IDLE</span>
+        </div>
+      </div>
+
+      <!-- Throughput & Latency -->
+      <div class="stat-card" style="--accent-color: #06b6d4;">
+        <div class="stat-header">
+          <span class="stat-title">Throughput & Latency</span>
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          </div>
+        </div>
+        <div class="stat-value">
+          <span id="kpi-throughput">0.00</span>
+          <span class="stat-unit">req/s</span>
+        </div>
+        <div class="stat-footer">
+          <span>Avg Latency: <b id="kpi-latency" style="color:#f1f5f9">—</b></span>
+          <svg class="sparkline-svg" id="spark-throughput" viewBox="0 0 80 26"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PAGE: DASHBOARD ==================== -->
+    <section class="page-section active" id="page-dashboard">
+      <!-- Chart & Breakdown Grid -->
+      <div class="grid-2">
+        <!-- SVG Timeline Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Real-Time Throughput & Request Stream</div>
+              <div class="card-subtitle">Asynchronous requests vs completions over time window</div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-indicator" style="background:#3b82f6;"></span> Requests</div>
+              <div class="legend-item"><span class="legend-indicator" style="background:#10b981;"></span> Completions</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <svg id="timeline-svg" viewBox="0 0 680 220" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <!-- I/O Operations Distribution -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">I/O Operation Balance</div>
+              <div class="card-subtitle">Breakdown of READ vs WRITE file requests</div>
+            </div>
+          </div>
+
+          <div id="io-breakdown">
+            <div class="progress-bar-group">
+              <div class="progress-header">
+                <span style="color:#93c5fd; font-weight:600;">READ Operations</span>
+                <span id="io-read-count">0 (0%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="io-read-fill" style="width:0%; background:#3b82f6;"></div>
+              </div>
+            </div>
+
+            <div class="progress-bar-group">
+              <div class="progress-header">
+                <span style="color:#fcd34d; font-weight:600;">WRITE Operations</span>
+                <span id="io-write-count">0 (0%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="io-write-fill" style="width:0%; background:#f59e0b;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
+            <div class="card-title" style="font-size:12px; margin-bottom: 10px;">Quick Health Matrix</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size:11.5px; color:var(--text-muted);">
+              <div>IPC Pipe: <b style="color:var(--emerald);">Open & Buffered</b></div>
+              <div>Named Sem: <b style="color:var(--emerald);">Active Lock</b></div>
+              <div>Worker Model: <b style="color:#fff;">fork() + exit()</b></div>
+              <div>Reap Strategy: <b style="color:#fff;">waitpid WNOHANG</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Workers & Recent Stream Grid -->
+      <div class="grid-equal">
+        <!-- Live Active Workers -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">In-Flight Worker Processes</div>
+              <div class="card-subtitle">Child worker processes currently executing file I/O</div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="tbl-active-workers">
+              <thead>
+                <tr>
+                  <th>Worker PID</th>
+                  <th>Operation</th>
+                  <th>Target File</th>
+                  <th>Elapsed</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-active-workers">
+                <tr><td colspan="5" class="empty-state">No workers actively processing</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Completion Stream -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Recent Job Ledger</div>
+              <div class="card-subtitle">Last jobs reported through completion pipe</div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>PID</th>
+                  <th>Op</th>
+                  <th>File</th>
+                  <th>Latency</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-recent-completions">
+                <tr><td colspan="5" class="empty-state">No completed jobs yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE: WORKER POOL ==================== -->
+    <section class="page-section" id="page-workers">
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Worker Process Lifecycle Architecture</div>
+            <div class="card-subtitle">Non-blocking master process dispatches isolated child worker per client TCP connection</div>
+          </div>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); border:1px solid var(--border); border-radius: var(--radius-md); padding:16px; font-size:12px; color:var(--text-muted); line-height: 1.6;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-family:var(--font-mono); font-size:11.5px;">
+            <div style="padding:6px 12px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:6px; color:#a5b4fc;">1. select() wakes on client</div>
+            <span>➔</span>
+            <div style="padding:6px 12px; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.3); border-radius:6px; color:#67e8f9;">2. fork() creates Worker PID</div>
+            <span>➔</span>
+            <div style="padding:6px 12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:6px; color:#fcd34d;">3. processRequest() I/O</div>
+            <span>➔</span>
+            <div style="padding:6px 12px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:6px; color:#6ee7b7;">4. Pipe write & exit(0)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Historical Worker Process Registry</div>
+            <div class="card-subtitle">All worker processes spawned during this session</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Job #</th>
+                <th>Worker PID</th>
+                <th>Operation</th>
+                <th>Target File</th>
+                <th>Spawn Time</th>
+                <th>Execution Latency</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-all-workers">
+              <tr><td colspan="7" class="empty-state">No worker processes spawned yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE: COMPLETION QUEUE ==================== -->
+    <section class="page-section" id="page-queue">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Asynchronous Completion Queue</div>
+            <div class="card-subtitle">Jobs received and dequeued from the parent's IPC read pipe</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="queue-search" class="input-field" placeholder="Filter by file or op..." style="width: 220px; padding: 6px 12px; font-size:12px;">
+            <button class="btn btn-sm" id="btn-export-queue-csv">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Completion Time</th>
+                <th>Worker PID</th>
+                <th>Operation</th>
+                <th>Filename</th>
+                <th>Latency (ms)</th>
+                <th>Completed Total</th>
+                <th>Calculated Throughput</th>
+                <th>Queue Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-full-queue">
+              <tr><td colspan="8" class="empty-state">Completion queue is currently empty</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE: STORAGE & FILES ==================== -->
+    <section class="page-section" id="page-files">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Server Storage Explorer</div>
+            <div class="card-subtitle">Files physically residing in the server's workspace directory</div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-refresh-files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Refresh Files
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>File Name</th>
+                <th>Size (Bytes)</th>
+                <th>Last Modified</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-files-list">
+              <tr><td colspan="4" class="empty-state">Loading files...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE: CLIENT CONSOLE ==================== -->
+    <section class="page-section" id="page-client">
+      <div class="grid-2">
+        <!-- Request Builder -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Asynchronous Wire Protocol Dispatcher</div>
+              <div class="card-subtitle">Send structured TCP packets to server port 8080</div>
+            </div>
+          </div>
+
+          <form id="client-form">
+            <div class="form-group">
+              <label class="form-label">Operation Type</label>
+              <select id="req-op" class="select-field">
+                <option value="READ">READ (Read file content into buffer)</option>
+                <option value="WRITE" selected>WRITE (Persist payload to disk)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Target Filename</label>
+              <input type="text" id="req-file" class="input-field" value="dataset.txt" required maxlength="255">
+            </div>
+
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <label class="form-label" style="margin-bottom:0;">Payload Data (For WRITE)</label>
+                <span style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted);" id="payload-counter">0 / 1023 bytes</span>
+              </div>
+              <textarea id="req-data" class="textarea-field" maxlength="1023" placeholder="Enter content to write to the file...">High-performance asynchronous file processing test payload.</textarea>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button type="submit" class="btn btn-primary" id="btn-submit-request" style="flex:1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                Send Request via TCP Socket
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Response Inspector -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Worker Response Inspector</div>
+              <div class="card-subtitle">Real-time socket reply and latency report</div>
+            </div>
+            <span class="badge badge-done" id="resp-status-badge" style="display:none;">SUCCESS</span>
+          </div>
+
+          <div style="background:#04060a; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; min-height: 220px; font-family:var(--font-mono); font-size:12.5px;">
+            <div style="color:var(--text-subtle); margin-bottom:8px; font-size:11px;">// RAW SOCKET RESPONSE</div>
+            <pre id="resp-output" style="color:var(--text); white-space:pre-wrap; word-break:break-all;">Awaiting client request...</pre>
+          </div>
+
+          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted);">
+            <span>Round-Trip Latency: <b id="resp-latency" style="color:#fff;">—</b></span>
+            <span>Worker PID: <b id="resp-pid" style="color:#fff;">—</b></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE: SYSTEM LOGS ==================== -->
+    <section class="page-section" id="page-logs">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Live Server Diagnostics & Stream</div>
+            <div class="card-subtitle">Captures stdout/stderr of server binary and worker sub-processes</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-sm" id="btn-autoscroll" style="color:var(--emerald); border-color:var(--emerald);">Auto-Scroll: ON</button>
+            <button class="btn btn-sm" id="btn-clear-logs">Clear View</button>
+          </div>
+        </div>
+
+        <div class="terminal-container" id="terminal-logs">
+          <!-- Logs populate here -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- View File Modal -->
+  <div class="modal-overlay" id="file-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-file-title" style="font-size:14px; font-weight:700;">File Preview</h3>
+        <button class="btn btn-sm" id="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre id="modal-file-content" style="background:#04060a; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; font-family:var(--font-mono); font-size:12px; white-space:pre-wrap; max-height:400px; overflow-y:auto; color:var(--text);"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm" id="btn-modal-load-client">Load in Client Form</button>
+        <button class="btn btn-sm btn-primary" id="btn-modal-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toasts"></div>
+
+  <!-- Client JavaScript -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Safe DOM Helper
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => document.querySelectorAll(s);
+
+      // State Store
+      let serverStatus = { online: false, port: 8080, total: 0, completed: 0 };
+      const workersMap = new Map();
+      let logsList = [];
+      let filesList = [];
+      let isBridgeConnected = false;
+      let autoScroll = true;
+      let logClearFloor = 0;
+      let activePage = 'dashboard';
+
+      // Utility Formatters
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+
+      const fmtTime = (ts) => {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        return isNaN(d.getTime()) ? '—' : d.toTimeString().slice(0, 8);
+      };
+
+      const fmtLatency = (val) => {
+        if (val === null || val === undefined || isNaN(val)) return '—';
+        return Number(val).toFixed(2) + ' ms';
+      };
+
+      const fmtThroughput = (val) => {
+        if (val === null || val === undefined || isNaN(val)) return '0.00';
+        return Number(val).toFixed(2);
+      };
+
+      // Toast Notification
+      function showToast(msg, type = 'info') {
+        const c = $('#toasts');
+        if (!c) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${esc(msg)}</span>`;
+        c.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3500);
+      }
+
+      // Sparkline SVG Generator (Safely handles 0, 1, or N points without NaN)
+      function renderSparkline(svgEl, data, color) {
+        if (!svgEl) return;
+        const pts = (data || []).slice(-25);
+        if (pts.length < 2) {
+          svgEl.innerHTML = '';
+          return;
+        }
+        const max = Math.max(...pts, 1);
+        const min = Math.min(...pts, 0);
+        const range = max - min || 1;
+        const w = 80, h = 26;
+
+        const points = pts.map((v, i) => {
+          const x = (i / (pts.length - 1)) * w;
+          const y = h - ((v - min) / range) * (h - 6) - 3;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+
+        svgEl.innerHTML = `
+          <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
+        `;
+      }
+
+      // Timeline Chart Renderer
+      function updateTimelineChart() {
+        const svg = $('#timeline-svg');
+        if (!svg) return;
+
+        const now = Date.now();
+        const WINDOW_MS = 20 * 60 * 1000; // 20 minute window
+        const TICKS = 21;
+        const step = WINDOW_MS / (TICKS - 1);
+        const start = now - WINDOW_MS;
+
+        const allWorkers = Array.from(workersMap.values());
+        const reqData = [];
+        const compData = [];
+
+        for (let i = 0; i < TICKS; i++) {
+          const t = start + i * step;
+          let r = 0, c = 0;
+          for (const w of allWorkers) {
+            if (w.created && w.created <= t) r++;
+            if (w.done && w.done <= t) c++;
+          }
+          reqData.push(r);
+          compData.push(c);
+        }
+
+        const maxVal = Math.max(5, Math.ceil(Math.max(...reqData, ...compData, 0) / 5) * 5);
+        const W = 680, H = 220;
+        const padL = 36, padR = 14, padT = 16, padB = 28;
+        const gW = W - padL - padR;
+        const gH = H - padT - padB;
+
+        const xPos = (idx) => padL + (idx / (TICKS - 1)) * gW;
+        const yPos = (val) => padT + gH - (val / maxVal) * gH;
+
+        // Path generator
+        function buildPath(data) {
+          if (!data.length) return '';
+          let d = `M ${xPos(0).toFixed(1)} ${yPos(data[0]).toFixed(1)}`;
+          for (let i = 1; i < data.length; i++) {
+            const x = xPos(i);
+            const prevY = yPos(data[i - 1]);
+            const currY = yPos(data[i]);
+            d += ` L ${x.toFixed(1)} ${prevY.toFixed(1)} L ${x.toFixed(1)} ${currY.toFixed(1)}`;
+          }
+          return d;
+        }
+
+        // Horizontal Grid Lines
+        let gridLines = '';
+        for (let i = 0; i <= 4; i++) {
+          const v = Math.round(maxVal - (i / 4) * maxVal);
+          const y = padT + (i / 4) * gH;
+          gridLines += `
+            <line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+            <text x="4" y="${y + 4}" fill="#64748b" font-size="9" font-family="JetBrains Mono">${v}</text>
+          `;
+        }
+
+        // Time X Labels
+        let timeLabels = '';
+        for (let i = 0; i < TICKS; i += 5) {
+          const t = new Date(start + i * step);
+          const label = t.toTimeString().slice(0, 5);
+          const x = xPos(i);
+          timeLabels += `
+            <text x="${x}" y="${H - 8}" fill="#64748b" font-size="9" font-family="JetBrains Mono" text-anchor="${i === 0 ? 'start' : i === TICKS - 1 ? 'end' : 'middle'}">${label}</text>
+          `;
+        }
+
+        svg.innerHTML = `
+          ${gridLines}
+          <path d="${buildPath(compData)}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="${buildPath(reqData)}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="5 4" stroke-linejoin="round" />
+          ${timeLabels}
+        `;
+      }
+
+      // Primary Render Loop
+      let renderScheduled = false;
+      function scheduleRender() {
+        if (!renderScheduled) {
+          renderScheduled = true;
+          requestAnimationFrame(() => {
+            renderScheduled = false;
+            renderUI();
+          });
+        }
+      }
+
+      function renderUI() {
+        const isOnline = isBridgeConnected && serverStatus.online;
+
+        // Server Status Badges
+        const pulse = $('#server-pulse');
+        const statusText = $('#server-status-text');
+        const portPill = $('#server-port-pill');
+        const bridgeText = $('#bridge-status');
+
+        if (pulse) pulse.className = `pulse-dot ${isOnline ? 'online' : ''}`;
+        if (statusText) statusText.textContent = isOnline ? 'ONLINE' : !isBridgeConnected ? 'DISCONNECTED' : 'STANDBY';
+        if (portPill) portPill.textContent = `PORT ${serverStatus.port || 8080}`;
+        if (bridgeText) bridgeText.textContent = isBridgeConnected ? 'Connected (SSE)' : 'Reconnecting...';
+
+        // Workers Analysis
+        const allWk = Array.from(workersMap.values());
+        const completedWk = allWk.filter((w) => w.status === 'DONE').sort((a, b) => (b.done || 0) - (a.done || 0));
+        const activeWk = allWk.filter((w) => w.status !== 'DONE').sort((a, b) => (b.created || 0) - (a.created || 0));
+
+        // Badges in Nav
+        const navW = $('#nav-workers-badge');
+        const navQ = $('#nav-queue-badge');
+        const navF = $('#nav-files-badge');
+        if (navW) navW.textContent = allWk.length;
+        if (navQ) navQ.textContent = completedWk.length;
+        if (navF) navF.textContent = filesList.length;
+
+        // KPIs
+        const totalReq = serverStatus.total || allWk.length;
+        const totalComp = serverStatus.completed || completedWk.length;
+        const kTotal = $('#kpi-total');
+        const kComp = $('#kpi-completed');
+        const kActive = $('#kpi-active');
+        const kTp = $('#kpi-throughput');
+        const kLat = $('#kpi-latency');
+        const aTag = $('#active-tag');
+
+        if (kTotal) kTotal.textContent = totalReq;
+        if (kComp) kComp.textContent = totalComp;
+        if (kActive) kActive.textContent = activeWk.length;
+
+        if (aTag) {
+          aTag.textContent = activeWk.length > 0 ? `${activeWk.length} RUNNING` : 'IDLE';
+          aTag.className = `badge ${activeWk.length > 0 ? 'badge-processing' : 'badge-done'}`;
+        }
+
+        // Calculate latest throughput & average latency
+        const latencies = completedWk.map((w) => w.latency).filter((l) => typeof l === 'number');
+        const avgLat = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null;
+        const lastTp = completedWk.find((w) => typeof w.throughput === 'number')?.throughput || 0;
+
+        if (kTp) kTp.textContent = fmtThroughput(lastTp);
+        if (kLat) kLat.textContent = fmtLatency(avgLat);
+
+        // Sparklines
+        const runningTotals = allWk.map((_, i) => i + 1);
+        const runningComps = completedWk.map((_, i) => i + 1);
+        const tpHistory = completedWk.slice(-20).map((w) => w.throughput || 0).reverse();
+
+        renderSparkline($('#spark-total'), runningTotals, '#3b82f6');
+        renderSparkline($('#spark-completed'), runningComps, '#10b981');
+        renderSparkline($('#spark-throughput'), tpHistory, '#06b6d4');
+
+        // I/O Operation Breakdown
+        let readCount = 0, writeCount = 0;
+        allWk.forEach((w) => {
+          if (w.op === 'READ') readCount++;
+          else if (w.op === 'WRITE') writeCount++;
+        });
+        const totalOps = readCount + writeCount || 1;
+        const readPct = Math.round((readCount / totalOps) * 100);
+        const writePct = Math.round((writeCount / totalOps) * 100);
+
+        const rCountEl = $('#io-read-count');
+        const wCountEl = $('#io-write-count');
+        const rFillEl = $('#io-read-fill');
+        const wFillEl = $('#io-write-fill');
+
+        if (rCountEl) rCountEl.textContent = `${readCount} (${readPct}%)`;
+        if (wCountEl) wCountEl.textContent = `${writeCount} (${writePct}%)`;
+        if (rFillEl) rFillEl.style.width = `${readPct}%`;
+        if (wFillEl) wFillEl.style.width = `${writePct}%`;
+
+        // Active Workers Table (Overview)
+        const tbodyActive = $('#tbody-active-workers');
+        if (tbodyActive) {
+          if (activeWk.length === 0) {
+            tbodyActive.innerHTML = `<tr><td colspan="5" class="empty-state">No workers actively processing</td></tr>`;
+          } else {
+            tbodyActive.innerHTML = activeWk.slice(0, 5).map((w) => {
+              const elapsed = w.created ? ((Date.now() - w.created) / 1000).toFixed(1) + 's' : '—';
+              const opBadge = w.op === 'READ' ? 'badge-read' : w.op === 'WRITE' ? 'badge-write' : 'badge-created';
+              return `
+                <tr>
+                  <td><b>${w.pid}</b></td>
+                  <td><span class="badge ${opBadge}">${esc(w.op || 'SPAWNING')}</span></td>
+                  <td>${esc(w.file || '—')}</td>
+                  <td>${elapsed}</td>
+                  <td><span class="badge badge-processing">${esc(w.status)}</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // Recent Completions Table (Overview)
+        const tbodyRecent = $('#tbody-recent-completions');
+        if (tbodyRecent) {
+          if (completedWk.length === 0) {
+            tbodyRecent.innerHTML = `<tr><td colspan="5" class="empty-state">No completed jobs yet</td></tr>`;
+          } else {
+            tbodyRecent.innerHTML = completedWk.slice(0, 6).map((w) => {
+              const opBadge = w.op === 'READ' ? 'badge-read' : 'badge-write';
+              return `
+                <tr>
+                  <td>${fmtTime(w.done)}</td>
+                  <td>${w.pid}</td>
+                  <td><span class="badge ${opBadge}">${esc(w.op)}</span></td>
+                  <td>${esc(w.file)}</td>
+                  <td><span style="color:#10b981; font-weight:600;">${fmtLatency(w.latency)}</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // All Workers Page Table
+        const tbodyAllWorkers = $('#tbody-all-workers');
+        if (tbodyAllWorkers) {
+          if (allWk.length === 0) {
+            tbodyAllWorkers.innerHTML = `<tr><td colspan="7" class="empty-state">No worker processes spawned yet</td></tr>`;
+          } else {
+            tbodyAllWorkers.innerHTML = allWk.slice().reverse().map((w) => {
+              const opBadge = w.op === 'READ' ? 'badge-read' : w.op === 'WRITE' ? 'badge-write' : 'badge-created';
+              const stBadge = w.status === 'DONE' ? 'badge-done' : 'badge-processing';
+              return `
+                <tr>
+                  <td>#${w.id}</td>
+                  <td><b>${w.pid}</b></td>
+                  <td><span class="badge ${opBadge}">${esc(w.op || '—')}</span></td>
+                  <td>${esc(w.file || '—')}</td>
+                  <td>${fmtTime(w.created)}</td>
+                  <td>${fmtLatency(w.latency)}</td>
+                  <td><span class="badge ${stBadge}">${esc(w.status)}</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // Completion Queue Page Table
+        const tbodyFullQueue = $('#tbody-full-queue');
+        if (tbodyFullQueue) {
+          const query = ($('#queue-search')?.value || '').trim().toLowerCase();
+          const filtered = completedWk.filter((w) => {
+            if (!query) return true;
+            return (w.file && w.file.toLowerCase().includes(query)) ||
+                   (w.op && w.op.toLowerCase().includes(query)) ||
+                   String(w.pid).includes(query);
+          });
+
+          if (filtered.length === 0) {
+            tbodyFullQueue.innerHTML = `<tr><td colspan="8" class="empty-state">No matching completed jobs</td></tr>`;
+          } else {
+            tbodyFullQueue.innerHTML = filtered.map((w) => {
+              const opBadge = w.op === 'READ' ? 'badge-read' : 'badge-write';
+              return `
+                <tr>
+                  <td>${fmtTime(w.done)}</td>
+                  <td><b>${w.pid}</b></td>
+                  <td><span class="badge ${opBadge}">${esc(w.op)}</span></td>
+                  <td>${esc(w.file)}</td>
+                  <td><span style="color:#10b981; font-weight:600;">${fmtLatency(w.latency)}</span></td>
+                  <td>${w.total ?? '—'}</td>
+                  <td>${fmtThroughput(w.throughput)} req/s</td>
+                  <td><span class="badge badge-done">COMPLETED</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // Storage & Files Table
+        renderFilesTable();
+
+        // Terminal Logs
+        renderTerminalLogs();
+
+        // Update Timeline Chart
+        updateTimelineChart();
+      }
+
+      function renderFilesTable() {
+        const tbody = $('#tbody-files-list');
+        if (!tbody) return;
+
+        if (filesList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No files currently in storage</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filesList.map((f) => {
+          const dateStr = f.mtime ? new Date(f.mtime).toLocaleString() : '—';
+          return `
+            <tr>
+              <td>
+                <span style="font-weight:600; color:#fff;">📄 ${esc(f.name)}</span>
+              </td>
+              <td>${f.size} B</td>
+              <td style="color:var(--text-muted); font-size:11.5px;">${dateStr}</td>
+              <td>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm btn-cyan" onclick="window.viewFileContent('${esc(f.name)}')">View</button>
+                  <button class="btn btn-sm" onclick="window.loadFileToClient('${esc(f.name)}')">Load in Client</button>
+                  <button class="btn btn-sm btn-danger" onclick="window.deleteFilePrompt('${esc(f.name)}')">Delete</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function renderTerminalLogs() {
+        const term = $('#terminal-logs');
+        if (!term) return;
+
+        const visibleLogs = logsList.filter((l) => l.id > logClearFloor).slice(-400);
+        term.innerHTML = visibleLogs.map((l) => {
+          const match = (l.msg || '').match(/^\[([^\]]+)\]\s*(.*)$/);
+          let tagHtml = '';
+          let text = l.msg || '';
+
+          if (match) {
+            const rawTag = match[1].split(' ')[0];
+            const tagClass = `log-tag-${rawTag}`;
+            tagHtml = `<span class="log-tag ${tagClass}">[${esc(match[1])}]</span>`;
+            text = match[2];
+          }
+
+          return `
+            <div class="log-line">
+              <span class="log-time">${fmtTime(l.ts)}</span>
+              ${tagHtml}
+              <span class="log-msg">${esc(text)}</span>
+            </div>
+          `;
+        }).join('');
+
+        if (autoScroll) {
+          term.scrollTop = term.scrollHeight;
+        }
+      }
+
+      // Connect EventSource (SSE)
+      function connectSSE() {
+        const es = new EventSource('/api/stream');
+
+        es.onopen = () => {
+          isBridgeConnected = true;
+          scheduleRender();
+        };
+
+        es.onerror = () => {
+          isBridgeConnected = false;
+          scheduleRender();
+        };
+
+        es.addEventListener('snapshot', (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            serverStatus = data.status || serverStatus;
+            workersMap.clear();
+            (data.workers || []).forEach((w) => workersMap.set(w.id, w));
+            logsList = data.logs || [];
+            filesList = data.files || [];
+            scheduleRender();
+          } catch (err) {
+            console.error('SSE snapshot parse error:', err);
+          }
+        });
+
+        es.addEventListener('status', (e) => {
+          try {
+            Object.assign(serverStatus, JSON.parse(e.data));
+            scheduleRender();
+          } catch (_) {}
+        });
+
+        es.addEventListener('worker', (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            serverStatus.total = payload.total;
+            serverStatus.completed = payload.completed;
+            if (payload.w && payload.w.id) {
+              workersMap.set(payload.w.id, payload.w);
+              if (workersMap.size > 1000) {
+                workersMap.delete(workersMap.keys().next().value);
+              }
+            }
+            scheduleRender();
+          } catch (_) {}
+        });
+
+        es.addEventListener('log', (e) => {
+          try {
+            const entry = JSON.parse(e.data);
+            logsList.push(entry);
+            if (logsList.length > 2000) logsList.shift();
+            scheduleRender();
+          } catch (_) {}
+        });
+      }
+
+      connectSSE();
+
+      // Navigation Hash Routing
+      function handleRoute() {
+        const hash = (location.hash || '#dashboard').slice(1);
+        const validPages = ['dashboard', 'workers', 'queue', 'files', 'client', 'logs'];
+        activePage = validPages.includes(hash) ? hash : 'dashboard';
+
+        // Update nav UI
+        $$('nav a').forEach((link) => {
+          link.classList.toggle('active', link.getAttribute('data-page') === activePage);
+        });
+
+        // Show corresponding section
+        $$('.page-section').forEach((sec) => {
+          sec.classList.toggle('active', sec.id === `page-${activePage}`);
+        });
+
+        // Update Header Title
+        const titleMap = {
+          dashboard: ['Overview', 'Real-time asynchronous IPC & multi-process file server monitor'],
+          workers: ['Worker Process Pool', 'Non-blocking master process dispatches isolated child worker per client TCP connection'],
+          queue: ['Completion Queue', 'Verified jobs received through child-to-parent IPC pipe'],
+          files: ['Storage & Files', 'Live directory inspector for files residing on the server'],
+          client: ['Client Console', 'Send structured TCP packets directly to the file server binary'],
+          logs: ['System Logs & Diagnostics', 'Real-time stdout & stderr stream of all server processes']
+        };
+
+        const [t, d] = titleMap[activePage] || ['Overview', ''];
+        $('#page-title').textContent = t;
+        $('#page-desc').textContent = d;
+
+        scheduleRender();
+      }
+
+      window.addEventListener('hashchange', handleRoute);
+      handleRoute();
+
+      // Client Form Submission
+      const form = $('#client-form');
+      if (form) {
+        const opSelect = $('#req-op');
+        const dataArea = $('#req-data');
+        const counter = $('#payload-counter');
+
+        opSelect.addEventListener('change', () => {
+          const isRead = opSelect.value === 'READ';
+          dataArea.disabled = isRead;
+          if (isRead) dataArea.style.opacity = '0.4';
+          else dataArea.style.opacity = '1';
+        });
+
+        dataArea.addEventListener('input', () => {
+          counter.textContent = `${new Blob([dataArea.value]).size} / 1023 bytes`;
+        });
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = $('#btn-submit-request');
+          const respOutput = $('#resp-output');
+          const respBadge = $('#resp-status-badge');
+          const respLat = $('#resp-latency');
+          const respPid = $('#resp-pid');
+
+          btn.disabled = true;
+          respOutput.textContent = 'Sending request over TCP socket...';
+          respBadge.style.display = 'none';
+
+          const t0 = performance.now();
+          try {
+            const res = await fetch('/api/request', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                operation: opSelect.value,
+                filename: $('#req-file').value.trim(),
+                data: opSelect.value === 'WRITE' ? dataArea.value : ''
+              })
+            });
+
+            const json = await res.json();
+            const rtt = (performance.now() - t0).toFixed(2);
+
+            if (res.ok && json.ok) {
+              respOutput.textContent = json.response || 'Success (empty response)';
+              respBadge.style.display = 'inline-flex';
+              respBadge.className = 'badge badge-done';
+              respBadge.textContent = 'SUCCESS';
+              respLat.textContent = `${rtt} ms (Round-trip)`;
+
+              // Extract PID if present
+              const m = (json.response || '').match(/worker\s*(\d+)/i);
+              respPid.textContent = m ? m[1] : 'Handled';
+
+              showToast(`Request completed in ${rtt} ms`, 'success');
+              if (json.files) filesList = json.files;
+            } else {
+              respOutput.textContent = `Error: ${json.error || 'Request failed'}`;
+              respBadge.style.display = 'inline-flex';
+              respBadge.className = 'badge badge-read';
+              respBadge.style.background = 'rgba(244,63,94,0.15)';
+              respBadge.style.color = '#fda4af';
+              respBadge.textContent = 'FAILED';
+              showToast(json.error || 'Request failed', 'error');
+            }
+          } catch (err) {
+            respOutput.textContent = `Network Exception: ${err.message}`;
+            showToast(err.message, 'error');
+          } finally {
+            btn.disabled = false;
+            fetchFiles();
+            scheduleRender();
+          }
+        });
+      }
+
+      // Benchmark / Stress Test
+      const btnStress = $('#btn-stress-test');
+      if (btnStress) {
+        btnStress.addEventListener('click', async () => {
+          btnStress.disabled = true;
+          showToast('Starting 10x concurrent async requests benchmark...', 'info');
+
+          try {
+            const res = await fetch('/api/benchmark', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ count: 10, concurrency: 5 })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              showToast(`Benchmark complete! ${data.completed}/${data.total} requests passed`, 'success');
+            } else {
+              showToast(data.error || 'Benchmark failed', 'error');
+            }
+          } catch (err) {
+            showToast(`Benchmark error: ${err.message}`, 'error');
+          } finally {
+            btnStress.disabled = false;
+            fetchFiles();
+            scheduleRender();
+          }
+        });
+      }
+
+      // Fetch Files helper
+      async function fetchFiles() {
+        try {
+          const res = await fetch('/api/files');
+          const data = await res.json();
+          if (data.files) {
+            filesList = data.files;
+            renderFilesTable();
+          }
+        } catch (_) {}
+      }
+
+      const btnRefFiles = $('#btn-refresh-files');
+      if (btnRefFiles) btnRefFiles.addEventListener('click', fetchFiles);
+
+      // Global Helpers for File Action Buttons
+      window.viewFileContent = async function (filename) {
+        try {
+          const res = await fetch(`/api/file?name=${encodeURIComponent(filename)}`);
+          const data = await res.json();
+          if (res.ok) {
+            $('#modal-file-title').textContent = `File: ${filename}`;
+            $('#modal-file-content').textContent = data.content || '(Empty file)';
+            $('#file-modal').classList.add('active');
+          } else {
+            showToast(data.error || 'Could not read file', 'error');
+          }
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      window.loadFileToClient = function (filename) {
+        location.hash = '#client';
+        $('#req-file').value = filename;
+        $('#req-op').value = 'READ';
+        $('#req-data').disabled = true;
+        $('#req-data').style.opacity = '0.4';
+        showToast(`Loaded ${filename} into Client form`, 'info');
+      };
+
+      window.deleteFilePrompt = async function (filename) {
+        if (!confirm(`Are you sure you want to permanently delete "${filename}"?`)) return;
+        try {
+          const res = await fetch(`/api/file?name=${encodeURIComponent(filename)}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(`Deleted ${filename}`, 'success');
+            filesList = data.files || [];
+            renderFilesTable();
+          } else {
+            showToast(data.error || 'Delete failed', 'error');
+          }
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      // Modal Closers
+      $('#btn-close-modal')?.addEventListener('click', () => $('#file-modal').classList.remove('active'));
+      $('#btn-modal-done')?.addEventListener('click', () => $('#file-modal').classList.remove('active'));
+      $('#file-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'file-modal') $('#file-modal').classList.remove('active');
+      });
+      $('#btn-modal-load-client')?.addEventListener('click', () => {
+        const title = $('#modal-file-title').textContent.replace('File: ', '').trim();
+        $('#file-modal').classList.remove('active');
+        if (title) window.loadFileToClient(title);
+      });
+
+      // Export JSON
+      $('#btn-export-json')?.addEventListener('click', () => {
+        const exportData = {
+          exportTimestamp: new Date().toISOString(),
+          status: serverStatus,
+          workers: Array.from(workersMap.values()),
+          logs: logsList,
+          files: filesList
+        };
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `server-metrics-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported metrics as JSON', 'success');
+      });
+
+      // Export CSV
+      $('#btn-export-queue-csv')?.addEventListener('click', () => {
+        const completedWk = Array.from(workersMap.values()).filter((w) => w.status === 'DONE');
+        const headers = ['CompletionTime', 'PID', 'Operation', 'Filename', 'LatencyMs', 'Total', 'Throughput'];
+        const rows = completedWk.map((w) => [
+          new Date(w.done).toISOString(),
+          w.pid,
+          w.op,
+          `"${(w.file || '').replace(/"/g, '""')}"`,
+          w.latency ?? '',
+          w.total ?? '',
+          w.throughput ?? ''
+        ]);
+        const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `completion-queue-${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported completion queue as CSV', 'success');
+      });
+
+      // Queue Search Filter
+      $('#queue-search')?.addEventListener('input', () => scheduleRender());
+
+      // Terminal Controls
+      $('#btn-autoscroll')?.addEventListener('click', (e) => {
+        autoScroll = !autoScroll;
+        e.target.textContent = `Auto-Scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+        e.target.style.color = autoScroll ? 'var(--emerald)' : 'var(--text-muted)';
+        e.target.style.borderColor = autoScroll ? 'var(--emerald)' : 'var(--border)';
+        if (autoScroll) scheduleRender();
+      });
+
+      $('#btn-clear-logs')?.addEventListener('click', () => {
+        logClearFloor = logsList.length > 0 ? logsList[logsList.length - 1].id : 0;
+        scheduleRender();
+        showToast('Logs view cleared', 'info');
+      });
+
+      // Recurring Heartbeat for Live Calculations (e.g. elapsed timers)
+      setInterval(() => {
+        if (activePage === 'dashboard' || activePage === 'workers') {
+          scheduleRender();
+        }
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "async-file-server-dashboard",
+  "version": "2.4.0",
+  "description": "High-performance asynchronous POSIX multi-process file server and enterprise dashboard",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js",
+    "build": "mkdir -p bin files && cc -Wall -Wextra -pthread -o bin/server server.c && cc -Wall -Wextra -o bin/client client.c",
+    "client": "./bin/client"
+  },
+  "keywords": ["async", "file-server", "posix", "ipc", "dashboard"],
+  "author": "",
+  "license": "ISC"
+}
